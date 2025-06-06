@@ -16,6 +16,7 @@ struct ChatThreadView: View {
     @State private var shouldShowErrorAlert = false
     
     @State private var scrollProxy: ScrollViewProxy?
+    @State private var streamingTask: Task<Void, Never>?
     
     let availableModels: [String]
     
@@ -48,6 +49,7 @@ struct ChatThreadView: View {
                 isTextFieldFocused: _isTextFieldFocused,
                 isThinking: thread.isThinking,
                 onSubmit: insertChatMessage,
+                onStop: stopGeneration,
                 selectedModel: Binding(
                     get: { thread.selectedModel ?? "" },
                     set: { thread.selectedModel = $0 }
@@ -59,6 +61,9 @@ struct ChatThreadView: View {
         .onAppear {
             focusTextField()
             ensureModelSelected()
+        }
+        .onDisappear {
+            streamingTask?.cancel()
         }
         .onChange(of: thread.id) { _, _ in
             focusTextField()
@@ -100,7 +105,7 @@ struct ChatThreadView: View {
         currentInputMessage = ""
         thread.isThinking = true
         
-        Task {
+        streamingTask = Task {
             do {
                 ensureModelSelected()
                 guard let selectedModel = thread.selectedModel, !selectedModel.isEmpty else {
@@ -118,10 +123,23 @@ struct ChatThreadView: View {
                 }
                 
                 for try await partialResponse in stream {
+                    if Task.isCancelled {
+                        break
+                    }
+                    
                     await MainActor.run {
                         assistantMessage.text += partialResponse
                         scrollProxy?.scrollTo(assistantMessage.id, anchor: .bottom)
                     }
+                }
+                
+                if Task.isCancelled {
+                    await MainActor.run {
+                        thread.isThinking = false
+                        focusTextField()
+                        streamingTask = nil
+                    }
+                    return
                 }
                 
                 await MainActor.run {
@@ -131,9 +149,20 @@ struct ChatThreadView: View {
                         setThreadTitle()
                     }
                     focusTextField()
+                    streamingTask = nil
                 }
             } catch {
-                await handleError(error)
+                if !Task.isCancelled {
+                    await handleError(error)
+                } else {
+                    await MainActor.run {
+                        thread.isThinking = false
+                        focusTextField()
+                    }
+                }
+                await MainActor.run {
+                    streamingTask = nil
+                }
             }
         }
     }
@@ -215,6 +244,13 @@ struct ChatThreadView: View {
                 print("Error summarizing thread: \(error.localizedDescription)")
             }
         }
+    }
+    
+    private func stopGeneration() {
+        streamingTask?.cancel()
+        streamingTask = nil
+        thread.isThinking = false
+        focusTextField()
     }
     
     private func setThreadTitle(_ summary: String) {
