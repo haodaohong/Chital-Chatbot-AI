@@ -60,7 +60,7 @@ struct SettingsView: View {
                             .frame(minHeight: 100)
                     }
                     .scrollContentBackground(.hidden)
-                    .background(Color.white)
+                    .background(Color(NSColor.textBackgroundColor))
                     .cornerRadius(6)
                 }
                 
