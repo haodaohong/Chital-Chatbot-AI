@@ -56,17 +56,19 @@ struct ChatThreadView: View {
                 ),
                 modelOptions: availableModels
             )
+            .onAppear {
+                isTextFieldFocused = true
+            }
+            .onChange(of: thread.id) { _, _ in
+                isTextFieldFocused = true
+            }
         }
         .padding()
         .onAppear {
-            focusTextField()
             ensureModelSelected()
         }
         .onDisappear {
             streamingTask?.cancel()
-        }
-        .onChange(of: thread.id) { _, _ in
-            focusTextField()
         }
         .alert("Error", isPresented: $shouldShowErrorAlert, actions: {
             Button("OK") {
@@ -82,12 +84,6 @@ struct ChatThreadView: View {
             withAnimation {
                 proxy.scrollTo(lastMessage.id, anchor: .bottom)
             }
-        }
-    }
-    
-    private func focusTextField() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            isTextFieldFocused = true
         }
     }
     
@@ -136,7 +132,7 @@ struct ChatThreadView: View {
                 if Task.isCancelled {
                     await MainActor.run {
                         thread.isThinking = false
-                        focusTextField()
+                        isTextFieldFocused = true
                         streamingTask = nil
                     }
                     return
@@ -148,7 +144,7 @@ struct ChatThreadView: View {
                         thread.hasReceivedFirstMessage = true
                         setThreadTitle()
                     }
-                    focusTextField()
+                    isTextFieldFocused = true
                     streamingTask = nil
                 }
             } catch {
@@ -157,7 +153,7 @@ struct ChatThreadView: View {
                 } else {
                     await MainActor.run {
                         thread.isThinking = false
-                        focusTextField()
+                        isTextFieldFocused = true
                     }
                 }
                 await MainActor.run {
@@ -250,7 +246,7 @@ struct ChatThreadView: View {
         streamingTask?.cancel()
         streamingTask = nil
         thread.isThinking = false
-        focusTextField()
+        isTextFieldFocused = true
     }
     
     private func setThreadTitle(_ summary: String) {
