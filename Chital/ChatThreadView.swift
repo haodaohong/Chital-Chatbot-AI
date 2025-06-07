@@ -181,21 +181,28 @@ struct ChatThreadView: View {
     }
     
     private func convertImagesToBase64(_ imageDataArray: [Data]) -> [String] {
-        return imageDataArray.map { imageData in
-            // Resize image to 896x896 (Gemma 3)
-            let resizedImageData = resizeImage(imageData, targetSize: CGSize(width: 896, height: 896))
+        return imageDataArray.compactMap { imageData in
+            // Since images are already pre-processed and compressed from ChatInputView,
+            // we can just resize them for the server without heavy processing
+            let resizedImageData = resizeImageEfficiently(imageData, targetSize: CGSize(width: 896, height: 896))
             return resizedImageData.base64EncodedString()
         }
     }
     
-    private func resizeImage(_ imageData: Data, targetSize: CGSize) -> Data {
+    private func resizeImageEfficiently(_ imageData: Data, targetSize: CGSize) -> Data {
         guard let nsImage = NSImage(data: imageData) else {
             return imageData // Return original if resizing fails
         }
         
+        // Use more efficient resizing with better performance characteristics
         let resizedImage = NSImage(size: targetSize)
         resizedImage.lockFocus()
-        nsImage.draw(in: NSRect(origin: .zero, size: targetSize))
+        nsImage.draw(in: NSRect(origin: .zero, size: targetSize), 
+                    from: NSRect(origin: .zero, size: nsImage.size), 
+                    operation: .sourceOver, 
+                    fraction: 1.0, 
+                    respectFlipped: false, 
+                    hints: [.interpolation: NSImageInterpolation.high])
         resizedImage.unlockFocus()
         
         guard let tiffData = resizedImage.tiffRepresentation,
