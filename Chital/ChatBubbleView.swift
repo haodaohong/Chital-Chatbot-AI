@@ -29,7 +29,7 @@ struct ChatBubbleView: View {
                     .cornerRadius(8)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                if (message.text != "") {
+                if (message.text != "" && !isThinking) {
                     HStack() {
                         HStack() {
                             ChatBubbleButton(title: "Copy", systemImage: "doc.on.doc", action: copyText)
