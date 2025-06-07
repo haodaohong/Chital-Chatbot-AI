@@ -11,6 +11,7 @@ struct ChatThreadView: View {
     
     @FocusState private var isTextFieldFocused: Bool
     @State private var currentInputMessage: String = ""
+    @State private var attachedImages: [Data] = []
     
     @State private var errorMessage: String?
     @State private var shouldShowErrorAlert = false
@@ -54,7 +55,11 @@ struct ChatThreadView: View {
                     get: { thread.selectedModel ?? "" },
                     set: { thread.selectedModel = $0 }
                 ),
-                modelOptions: availableModels
+                modelOptions: availableModels,
+                attachedImages: $attachedImages,
+                onImagesChanged: { images in
+                    attachedImages = images
+                }
             )
             .onAppear {
                 isTextFieldFocused = true
@@ -109,7 +114,13 @@ struct ChatThreadView: View {
                 }
                 
                 let ollamaService = OllamaService()
-                let ollamaMessages = chronologicalMessages.map { OllamaChatMessage(role: $0.isUser ? "user" : "assistant", content: $0.text) }
+                let ollamaMessages = chronologicalMessages.map { message in
+                    OllamaChatMessage(
+                        role: message.isUser ? "user" : "assistant", 
+                        content: message.text,
+                        images: message.images != nil ? convertImagesToBase64(message.images!) : nil
+                    )
+                }
                 let stream = ollamaService.streamConversation(model: selectedModel, messages: ollamaMessages)
                 let assistantMessage = ChatMessage(text: "", isUser: false, timestamp: Date())
                 
@@ -169,14 +180,49 @@ struct ChatThreadView: View {
         context.insert(thread)
     }
     
+    private func convertImagesToBase64(_ imageDataArray: [Data]) -> [String] {
+        return imageDataArray.map { imageData in
+            // Resize image to 896x896 (Gemma 3)
+            let resizedImageData = resizeImage(imageData, targetSize: CGSize(width: 896, height: 896))
+            return resizedImageData.base64EncodedString()
+        }
+    }
+    
+    private func resizeImage(_ imageData: Data, targetSize: CGSize) -> Data {
+        guard let nsImage = NSImage(data: imageData) else {
+            return imageData // Return original if resizing fails
+        }
+        
+        let resizedImage = NSImage(size: targetSize)
+        resizedImage.lockFocus()
+        nsImage.draw(in: NSRect(origin: .zero, size: targetSize))
+        resizedImage.unlockFocus()
+        
+        guard let tiffData = resizedImage.tiffRepresentation,
+              let bitmapRep = NSBitmapImageRep(data: tiffData),
+              let resizedData = bitmapRep.representation(using: .jpeg, properties: [.compressionFactor: 0.8]) else {
+            return imageData // Return original if resizing fails
+        }
+        
+        return resizedData
+    }
+    
     private func insertChatMessage() {
-        if currentInputMessage.isEmpty {
+        if currentInputMessage.isEmpty && attachedImages.isEmpty {
             return
         }
         
-        let newMessage = ChatMessage(text: currentInputMessage, isUser: true, timestamp: Date())
+        let newMessage = ChatMessage(
+            text: currentInputMessage, 
+            isUser: true, 
+            timestamp: Date(),
+            images: attachedImages.isEmpty ? nil : attachedImages
+        )
         thread.messages.append(newMessage)
         context.insert(newMessage)
+        
+        // Clear attached images after sending
+        attachedImages = []
         
         sendMessageStream()
     }
@@ -227,8 +273,14 @@ struct ChatThreadView: View {
                     throw NSError(domain: "ChatView", code: 1, userInfo: [NSLocalizedDescriptionKey: "No model selected"])
                 }
                 
-                var ollamaMessages = chronologicalMessages.map { OllamaChatMessage(role: $0.isUser ? "user" : "assistant", content: $0.text) }
-                ollamaMessages.append(OllamaChatMessage(role: "user", content: titleSummaryPrompt))
+                var ollamaMessages = chronologicalMessages.map { message in
+                    OllamaChatMessage(
+                        role: message.isUser ? "user" : "assistant", 
+                        content: message.text,
+                        images: message.images != nil ? convertImagesToBase64(message.images!) : nil
+                    )
+                }
+                ollamaMessages.append(OllamaChatMessage(role: "user", content: titleSummaryPrompt, images: nil))
                 
                 let ollamaService = OllamaService()
                 let summaryResponse = try await ollamaService.sendSingleMessage(model: selectedModel, messages: ollamaMessages)

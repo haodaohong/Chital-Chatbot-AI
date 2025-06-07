@@ -27,11 +27,13 @@ final class ChatMessage: Identifiable {
     var text: String
     var isUser: Bool
     var createdAt: Date
+    var images: [Data]?
     
-    init(text: String, isUser: Bool, timestamp: Date) {
+    init(text: String, isUser: Bool, timestamp: Date, images: [Data]? = nil) {
         self.id = UUID()
         self.text = text
         self.isUser = isUser
         self.createdAt = timestamp
+        self.images = images
     }
 }

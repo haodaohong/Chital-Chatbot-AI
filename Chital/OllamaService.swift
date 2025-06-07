@@ -4,6 +4,13 @@ import SwiftUI
 struct OllamaChatMessage: Codable {
     let role: String
     let content: String
+    let images: [String]?
+    
+    init(role: String, content: String, images: [String]? = nil) {
+        self.role = role
+        self.content = content
+        self.images = images
+    }
 }
 
 struct OllamaChatRequestOptions: Codable {

@@ -19,15 +19,34 @@ struct ChatBubbleView: View {
             }
             
             ZStack(alignment: .bottom) {
-                Markdown(message.text != "" ? message.text : "..." )
-                    .markdownTextStyle {
-                        FontSize(fontSize)
+                VStack(alignment: .leading, spacing: 8) {
+                    if let images = message.images, !images.isEmpty {
+                        HStack(alignment: .top, spacing: 0) {
+                            ForEach(Array(images.enumerated()), id: \.offset) { index, imageData in
+                                if let nsImage = NSImage(data: imageData) {
+                                    Image(nsImage: nsImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(maxWidth: 150, maxHeight: 150, alignment: .leading)
+                                        .cornerRadius(8)
+                                        .clipped()
+                                }
+                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(12)
-                    .textSelection(.enabled)
-                    .background(message.isUser ? Color.accentColor.opacity(0.2) : Color(NSColor.textBackgroundColor))
-                    .cornerRadius(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Markdown(message.text != "" ? message.text : "..." )
+                        .markdownTextStyle {
+                            FontSize(fontSize)
+                        }
+                        .textSelection(.enabled)
+                }
+                .padding(12)
+                .background(message.isUser ? Color.accentColor.opacity(0.2) : Color(NSColor.textBackgroundColor))
+                .cornerRadius(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
                 if (message.text != "" && !isThinking) {
                     HStack() {
