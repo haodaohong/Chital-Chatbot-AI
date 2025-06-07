@@ -5,11 +5,12 @@
 </p>
 
 ## Features
-* Low memory usage and fast app launch times
-* Support for multiple chat threads
-* Switch between different models
-* Markdown support
-* Automatic chat thread title summarization
+* Fast launch times with minimal memory footprint
+* Compact 2MB binary size
+* Multiple concurrent chat threads
+* Model switching during conversations
+* Markdown rendering for formatted responses
+* Auto-generated thread titles based on conversation content
 
 https://github.com/user-attachments/assets/14eddab2-87c3-4dd5-b26a-a58e2f12f76a
 
@@ -30,6 +31,7 @@ The following settings can be changed from Chital > Settings:
 * Default model
 * Ollama base URL
 * Context window length
+* Font size
 * Chat thread title summarization prompt
 
 ## Keyboard Shortcuts
@@ -37,7 +39,12 @@ The following settings can be changed from Chital > Settings:
 * `Option + Enter` Multiline input
 
 ## Contributions
-I built this application mainly for my own personal use. Feel free to fork this codebase to add features. I might not have time to look at the PRs and bug tickets.
+This is a personal project built for my own use. The codebase is available for forking and modifications. Note that I may not actively review pull requests or respond to issues due to time constraints.
+
+## New Version
+* Update version in `project.pbxproj`
+* Xcode > Product > Archive > Distribute App > Custom > Copy App > Select folder ...
+* Draft a new release and attach the application
 
 ## License
 MIT
