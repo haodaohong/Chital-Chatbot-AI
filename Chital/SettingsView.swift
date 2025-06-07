@@ -69,6 +69,7 @@ struct SettingsView: View {
                     
                     ZStack {
                         TextEditor(text: $titleSummaryPrompt)
+                            .font(.system(size: fontSize))
                             .padding(.vertical, 12)
                             .padding(.horizontal, 6)
                             .lineSpacing(5)
@@ -98,7 +99,7 @@ struct SettingsView: View {
         .task {
             await fetchAvailableModels()
         }
-        .frame(minWidth: 200, minHeight: 300)
+        .frame(minWidth: 500, maxWidth: 700, minHeight: 500, maxHeight: 700)
     }
     
     private func fetchAvailableModels() async {
