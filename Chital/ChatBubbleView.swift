@@ -6,6 +6,7 @@ struct ChatBubbleView: View {
     let isThinking: Bool
     let onRetry: () -> Void
     
+    @AppStorage("fontSize") private var fontSize = AppConstants.defaultFontSize
     @State private var isHovering = false
     
     var body: some View {
@@ -19,6 +20,9 @@ struct ChatBubbleView: View {
             
             ZStack(alignment: .bottom) {
                 Markdown(message.text != "" ? message.text : "..." )
+                    .markdownTextStyle {
+                        FontSize(fontSize)
+                    }
                     .padding(12)
                     .textSelection(.enabled)
                     .background(message.isUser ? Color.accentColor.opacity(0.2) : Color(NSColor.textBackgroundColor))

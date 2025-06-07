@@ -10,6 +10,8 @@ struct SettingsView: View {
     @AppStorage("defaultModelName") private var defaultModelName = AppConstants.defaultModelName
     @State private var availableModels: [String] = []
     
+    @AppStorage("fontSize") private var fontSize = AppConstants.defaultFontSize
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -49,6 +51,19 @@ struct SettingsView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 10) {
+                    Text("Chat Font Size")
+                        .font(.headline)
+                    
+                    HStack {
+                        Slider(value: $fontSize, in: 10...24, step: 1)
+                            .frame(width: 200)
+                        
+                        Text("\(Int(fontSize))pt")
+                            .frame(width: 40, alignment: .leading)
+                    }
+                }
+                
+                VStack(alignment: .leading, spacing: 10) {
                     Text("Thread Title Summary Prompt")
                         .font(.headline)
                     
@@ -70,6 +85,7 @@ struct SettingsView: View {
                     contextWindowLength = AppConstants.contextWindowLength
                     contextWindowLengthString = "\(AppConstants.contextWindowLength)"
                     defaultModelName = AppConstants.defaultModelName
+                    fontSize = AppConstants.defaultFontSize
                 }
             }
             .padding()

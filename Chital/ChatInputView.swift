@@ -10,6 +10,8 @@ struct ChatInputView: View {
     @Binding var selectedModel: String
     let modelOptions: [String]
     
+    @AppStorage("fontSize") private var fontSize = AppConstants.defaultFontSize
+    
     var body: some View {
         VStack {
             HStack {
@@ -28,6 +30,7 @@ struct ChatInputView: View {
             HStack {
                 TextField(isThinking ? "Thinking..." : "How can I help you today?", text: $currentInputMessage, axis: .vertical)
                     .textFieldStyle(PlainTextFieldStyle())
+                    .font(.system(size: fontSize))
                     .lineLimit(10)
                     .padding(.horizontal, 15)
                     .padding(.vertical, 8)
